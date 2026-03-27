@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../../../UofT 1st Year/Learning"
+		},
+		{
+			"name": "Praxis",
+			"path": ".."
+		},
+		{
+			"name": "Servo",
+			"path": "../../Servo"
+		}
+	],
+	"settings": {}
+}
