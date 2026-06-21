@@ -1,0 +1,121 @@
+//
+//  ContentView.swift
+//  AccessibleFilmingMacSim
+//
+//  Created by Ethan Batiste on 2026-03-27.
+//
+
+import SwiftUI
+import Combine
+
+struct ContentView: View {
+    
+    @ObservedObject private var ble   = BLEManager.shared
+    @ObservedObject private var goPro = GoProBLEManager.shared
+    @State private var activeCommand: String? = nil
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                
+                // Background grid
+                VStack(spacing: 0) {
+                    HStack(spacing: 0){
+                        cornerButton("arrow.up", command: "U")
+                        cornerButton("arrow.right", command: "R")
+                    }
+                    
+                    HStack(spacing: 0){
+                        cornerButton("arrow.down", command: "D")
+                        cornerButton("arrow.left", command: "L")
+                    }
+                }
+
+                // Center buttons
+                VStack(spacing: 12) {
+                    // Record button
+                    Button {
+                        print("Record")
+                        BLEManager.shared.sendCommand("REC")
+                    } label: {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 120, height: 120)
+                            .overlay(
+                                Image(systemName: "record.circle")
+                                    .foregroundStyle(.white)
+                                    .font(.system(size: 60, weight: .bold))
+                            )
+                    }
+                    .contentShape(Circle())
+
+                    // Reset button
+                    Button {
+                        print("Reset")
+                        BLEManager.shared.sendCommand("RESET")
+                    } label: {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 80, height: 80)
+                            .overlay(
+                                Image(systemName: "arrow.counterclockwise")
+                                    .foregroundStyle(.black)
+                                    .font(.system(size: 60, weight: .bold))
+                            )
+                    }
+                    .contentShape(Circle())
+                }
+            }
+        }
+        .frame(minWidth: 400, minHeight: 400)
+    }
+    
+    func cornerButton(_ symbol: String, command: String) -> some View {
+        let isPressed = activeCommand == command
+
+        return ZStack {
+            Rectangle()
+                .fill(isPressed ? Color.blue.opacity(0.5) : Color.blue)
+            Image(systemName: symbol)
+                .font(.system(size: 60, weight: .bold))
+                .foregroundStyle(isPressed ? Color.white.opacity(0.6) : Color.white)
+                .scaleEffect(isPressed ? 0.85 : 1.0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    activeCommand = command
+                    BLEManager.shared.startSending(command)
+                }
+                .onEnded { _ in
+                    activeCommand = nil
+                    BLEManager.shared.stopSending()
+                }
+        )
+    }
+    
+    func controlButton(_ icon: String, _ command: String) -> some View {
+        Rectangle()
+            .fill(Color.blue)
+            .overlay(
+                Image(systemName: icon)
+                    .font(.system(size: 40))
+                    .foregroundColor(.white)
+            )
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        BLEManager.shared.startSending(command)
+                    }
+                    .onEnded { _ in
+                        BLEManager.shared.stopSending()
+                    }
+            )
+    }
+}
+#Preview {
+    ContentView()
+}
