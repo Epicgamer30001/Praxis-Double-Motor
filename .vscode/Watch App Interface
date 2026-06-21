@@ -1,0 +1,136 @@
+//
+//  ContentView.swift
+//  Accessible Filming Watch Interface Watch App
+//
+//  Created by Ethan Batiste on 2026-03-12.
+//
+ 
+import SwiftUI
+import WatchKit
+ 
+// ─── COLOUR TOKENS — change everything here ───────────────────────────────────
+private enum AppColors {
+    static let background      = Color.black
+    static let buttonIdle      = Color(white: 0.22)   // dark grey tiles (same as your original blue but neutral)
+    static let recordActive    = Color.gray             // Record tile when recording
+    static let recordIdle      = Color.red            // Record tile when idle  ← your original blue
+    static let resetColor      = Color.green            // Reset tile             ← your original blue
+    static let arrowColor      = Color.blue            // Arrow tiles            ← your original blue
+    static let iconColor       = Color.white           // All icons/text
+}
+// ──────────────────────────────────────────────────────────────────────────────
+ 
+struct ContentView: View {
+    @State private var isRecording = false
+ 
+    var body: some View {
+        GeometryReader { geo in
+ 
+            // Match Control Center: tiny outer padding, small gap between tiles
+            let pad: CGFloat  = 6
+            let gap: CGFloat  = 6
+            let w = (geo.size.width  - pad * 2 - gap) / 2
+            let h = (geo.size.height - pad * 2 - gap * 2) / 3
+ 
+            VStack(spacing: gap) {
+ 
+                // ── Row 1: Record · Reset ──────────────────────────────────
+                HStack(spacing: gap) {
+                    // Record — uses your original record.circle SF symbol
+                    ccButton(color: isRecording ? AppColors.recordActive : AppColors.recordIdle,
+                             width: w, height: h) {
+                        isRecording.toggle()
+                        WKInterfaceDevice.current().play(isRecording ? .start : .stop)
+                    } content: {
+                        Image(systemName: isRecording ? "pause.circle" : "record.circle")
+                            .font(.system(size: 38, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+ 
+                    // Reset — swirly counterclockwise arrow
+                    ccButton(color: AppColors.resetColor,
+                             width: w, height: h) {
+                        isRecording = false
+                        WKInterfaceDevice.current().play(.click)
+                        print("Reset pressed")
+                    } content: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+                }
+ 
+                // ── Row 2: Up · Down ──────────────────────────────────────
+                HStack(spacing: gap) {
+                    ccButton(color: AppColors.arrowColor, width: w, height: h) {
+                        WKInterfaceDevice.current().play(.click)
+                        print("arrow.up pressed")
+                    } content: {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+ 
+                    ccButton(color: AppColors.arrowColor, width: w, height: h) {
+                        WKInterfaceDevice.current().play(.click)
+                        print("arrow.down pressed")
+                    } content: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+                }
+ 
+                // ── Row 3: Left · Right ───────────────────────────────────
+                HStack(spacing: gap) {
+                    ccButton(color: AppColors.arrowColor, width: w, height: h) {
+                        WKInterfaceDevice.current().play(.click)
+                        print("arrow.left pressed")
+                    } content: {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+ 
+                    ccButton(color: AppColors.arrowColor, width: w, height: h) {
+                        WKInterfaceDevice.current().play(.click)
+                        print("arrow.right pressed")
+                    } content: {
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(AppColors.iconColor)
+                    }
+                }
+            }
+            .padding(pad)
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .background(AppColors.background)
+        .ignoresSafeArea()
+    }
+ 
+    // ── Reusable Control-Center tile ─────────────────────────────────────────
+    @ViewBuilder
+    private func ccButton<Content: View>(
+        color: Color,
+        width: CGFloat,
+        height: CGFloat,
+        action: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(color)
+                    .frame(width: width, height: height)
+                content()
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .frame(width: width, height: height)
+    }
+}
+ 
+#Preview {
+    ContentView()
+}
