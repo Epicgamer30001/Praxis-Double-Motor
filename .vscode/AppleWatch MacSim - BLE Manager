@@ -1,0 +1,109 @@
+//
+//  BLEManager1.swift
+//  AccessibleFilmingMacSim
+//
+//  Created by Ethan Batiste on 2026-04-07.
+//
+
+import CoreBluetooth
+import Combine
+
+class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+    
+    
+    static let shared = BLEManager()
+    
+    var centralManager: CBCentralManager!
+    var hm10: CBPeripheral?
+    var writeCharacteristic: CBCharacteristic?
+    var sendTimer: Timer?
+    
+    override init() {
+        super.init()
+        print("BLEManager created!")
+        centralManager = CBCentralManager(delegate: self, queue: nil)
+    }
+    
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn:
+            print("Bluetooth is ON, scanning...")
+            central.scanForPeripherals(withServices: nil)
+        case .poweredOff:
+            print("Bluetooth is OFF - turn it on in System Settings")
+        case .unauthorized:
+            print("Bluetooth permission DENIED - check Info.plist")
+        case .unsupported:
+            print("This Mac does not support BLE")
+        case .unknown:
+            print("Bluetooth state unknown")
+        case .resetting:
+            print("Bluetooth is resetting")
+        @unknown default:
+            print("Unexpected state")
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager,
+                        didDiscover peripheral: CBPeripheral,
+                        advertisementData: [String: Any],
+                        rssi: NSNumber) {
+        print("Found: \(peripheral.name ?? "unknown")")
+        if peripheral.name == "DSD TECH" {
+            hm10 = peripheral
+            central.stopScan()
+            central.connect(peripheral)
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager,
+                        didConnect peripheral: CBPeripheral) {
+        print("Connected!")
+        peripheral.delegate = self
+        peripheral.discoverServices(nil)
+    }
+    
+    
+    
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverServices error: Error?) {
+        for service in peripheral.services ?? [] {
+            peripheral.discoverCharacteristics(nil, for: service)
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverCharacteristicsFor service: CBService,
+                    error: Error?) {
+        for char in service.characteristics ?? [] {
+            if char.uuid == CBUUID(string: "FFE1") {
+                writeCharacteristic = char
+                print("Ready to send commands!")
+            }
+        }
+    }
+    
+    // Single command (used by the Record button)
+    func sendCommand(_ cmd: String) {
+        guard let char = writeCharacteristic, let device = hm10 else { return }
+        if let data = cmd.data(using: .utf8) {
+            device.writeValue(data, for: char, type: .withoutResponse)
+        }
+    }
+    
+    // Continuous sending (used by direction buttons)
+    func startSending(_ cmd: String) {
+        stopSending()
+        sendCommand(cmd)
+        sendTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            self.sendCommand(cmd)
+        }
+    }
+    
+    func stopSending() {
+        sendTimer?.invalidate()
+        sendTimer = nil
+        sendCommand("S")
+    }
+}
+
