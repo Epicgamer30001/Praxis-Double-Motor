@@ -4,9 +4,9 @@ A two-axis, remotely-controlled GoPro mount I designed and built so a
 wheelchair user with limited arm strength and grip could independently pan,
 tilt, and trigger recording — no one holding the camera for them.
 
-<!-- ![Mount render](media/mount-render.png) -->
+![Poster](media/poster.png)
 <!-- ![Physical prototype](media/prototype-photo.jpg) -->
-<p align="center"><em>Add renders/photos here: media/mount-render.png, media/prototype-photo.jpg</em></p>
+
 
 ## Context
 
